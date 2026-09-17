@@ -39,12 +39,22 @@ export function useChatwootContext() {
         }
       }
 
-      // Chatwoot envía datos de contexto dentro de event.data
-      const accountId = payload?.data?.account?.id || payload?.account?.id;
-      const conversationId = payload?.data?.conversation?.id || payload?.conversation?.id;
+      // Chatwoot envía datos de contexto dentro de conversation o currentAgent
+      const accountId = 
+        payload?.data?.conversation?.account_id ||
+        payload?.data?.currentAgent?.account_id ||
+        payload?.data?.account?.id ||
+        payload?.conversation?.account_id ||
+        payload?.account?.id;
+
+      const conversationId = 
+        payload?.data?.conversation?.id || 
+        payload?.conversation?.id;
+
+      console.log('[Chatwoot Dashboard App] Payload recibido:', payload, 'accountId detectado:', accountId);
 
       if (accountId) {
-        fetchConfigForAccount(accountId, conversationId);
+        fetchConfigForAccount(Number(accountId), conversationId ? Number(conversationId) : null);
       }
     };
 
