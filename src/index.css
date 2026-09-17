@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+@theme {
+  --color-chatwoot: #1f93ff;
+}
