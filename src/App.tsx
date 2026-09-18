@@ -459,6 +459,34 @@ function App() {
               </h2>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Mensaje Inicial (Bienvenida)
+                </label>
+                <input 
+                  type="text" 
+                  name="welcomeMessage" 
+                  value={formData.welcomeMessage || ''} 
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Mensaje de Despedida (Al resolver)
+                </label>
+                <input 
+                  type="text" 
+                  name="farewellMessage" 
+                  value={formData.farewellMessage || ''} 
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
@@ -469,22 +497,20 @@ function App() {
                   name="handoffMessage" 
                   value={formData.handoffMessage || ''} 
                   onChange={handleChange}
-                  placeholder="Te estoy transfiriendo con un asesor humano."
-                  className="w-full border border-gray-300 rounded-md shadow-xs p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Mensaje de Opción Inválida (Fallback de menú)
+                  Mensaje de Fallback (Error de Menú)
                 </label>
                 <input 
                   type="text" 
                   name="fallbackMessage" 
                   value={formData.fallbackMessage || ''} 
                   onChange={handleChange}
-                  placeholder="Opción no válida. Elige una opción de la lista."
-                  className="w-full border border-gray-300 rounded-md shadow-xs p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
                 />
               </div>
             </div>
