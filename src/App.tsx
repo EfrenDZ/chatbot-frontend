@@ -14,6 +14,7 @@ interface FlowNode {
   id: string;
   type: NodeType;
   text: string;
+  messages?: string[];
   options?: FlowOption[];
 }
 
@@ -36,7 +37,7 @@ function App() {
         setRootNodeId(config.flowGraph.rootNodeId || config.flowGraph.nodes[0].id);
       } else {
         // Inicialización por defecto
-        setNodes([{ id: 'node-root', type: 'MENU', text: '¡Hola! Bienvenido. Elige una opción:', options: [] }]);
+        setNodes([{ id: 'node-root', type: 'MENU', text: '¡Hola! Bienvenido. Elige una opción:', messages: ['¡Hola! Bienvenido. Elige una opción:'], options: [] }]);
         setRootNodeId('node-root');
       }
     }
@@ -81,8 +82,20 @@ function App() {
   };
 
   // --- MUTADORES DEL GRAFO ---
+  const updateNodeMessages = (nodeId: string, messages: string[]) => {
+    setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, messages, text: messages[messages.length - 1] || '' } : n));
+  };
+
   const updateNodeText = (nodeId: string, text: string) => {
-    setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, text } : n));
+    setNodes(prev => prev.map(n => {
+      if (n.id === nodeId) {
+        const msgs = n.messages || [n.text];
+        const newMsgs = [...msgs];
+        newMsgs[newMsgs.length - 1] = text;
+        return { ...n, text, messages: newMsgs };
+      }
+      return n;
+    }));
   };
 
   const updateNodeType = (nodeId: string, type: NodeType) => {
@@ -110,7 +123,8 @@ function App() {
     const newNode: FlowNode = {
       id: newTargetId,
       type: 'MESSAGE',
-      text: 'Nueva respuesta o submenú...'
+      text: 'Nueva respuesta o submenú...',
+      messages: ['Nueva respuesta o submenú...']
     };
 
     setNodes(prev => {
@@ -184,19 +198,51 @@ function App() {
             </select>
           </div>
 
-          <textarea
-            rows={node.type === 'MENU' ? 2 : 3}
-            value={node.text}
-            onChange={(e) => updateNodeText(node.id, e.target.value)}
-            placeholder={
-              node.type === 'AI' 
-                ? "Instrucción o contexto para la IA antes de delegarle..." 
-                : node.type === 'HANDOFF'
-                ? "Mensaje al cliente antes de transferir (ej: 'Te estoy transfiriendo con un asesor humano...')"
-                : "Escribe el mensaje del bot aquí..."
-            }
-            className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-chatwoot focus:border-chatwoot mb-1 font-medium text-gray-800"
-          />
+          <div className="space-y-2">
+            {(node.messages || [node.text]).map((msg, idx, arr) => (
+              <div key={idx} className="relative">
+                <textarea
+                  rows={node.type === 'MENU' && idx === arr.length - 1 ? 2 : 2}
+                  value={msg}
+                  onChange={(e) => {
+                    const newMsgs = [...arr];
+                    newMsgs[idx] = e.target.value;
+                    updateNodeMessages(node.id, newMsgs);
+                  }}
+                  placeholder={
+                    node.type === 'AI' && idx === arr.length - 1
+                      ? "Instrucción o contexto para la IA antes de delegarle..." 
+                      : node.type === 'HANDOFF' && idx === arr.length - 1
+                      ? "Mensaje al cliente antes de transferir (ej: 'Te estoy transfiriendo...')"
+                      : "Escribe el globo de texto aquí..."
+                  }
+                  className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-chatwoot focus:border-chatwoot font-medium text-gray-800"
+                />
+                {arr.length > 1 && (
+                  <button
+                    onClick={() => {
+                      const newMsgs = arr.filter((_, i) => i !== idx);
+                      updateNodeMessages(node.id, newMsgs);
+                    }}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-white rounded-full p-1 shadow-sm border border-gray-100"
+                    title="Eliminar globo"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const arr = node.messages || [node.text];
+                updateNodeMessages(node.id, [...arr, '']);
+              }}
+              className="text-xs text-chatwoot font-semibold flex items-center hover:underline"
+            >
+              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+              + Añadir globo de texto
+            </button>
+          </div>
 
           {node.type === 'HANDOFF' && (
             <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded border border-amber-200 mt-2">
