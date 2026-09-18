@@ -170,7 +170,7 @@ function App() {
         <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs hover:shadow-md transition-shadow">
           <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
             <span className={`text-xs font-bold uppercase tracking-wider ${isRoot ? 'text-chatwoot' : node.type === 'HANDOFF' ? 'text-amber-600' : 'text-gray-500'}`}>
-              {isRoot ? '🚀 Punto de Inicio (Bienvenida)' : node.type === 'HANDOFF' ? '👤 Transferir a Humano' : '↳ Acción / Respuesta'}
+              {isRoot ? 'Punto de Inicio (Bienvenida)' : node.type === 'HANDOFF' ? 'Transferir a Humano' : 'Acción / Respuesta'}
             </span>
             <select
               value={node.type}
@@ -200,7 +200,7 @@ function App() {
 
           {node.type === 'HANDOFF' && (
             <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded border border-amber-200 mt-2">
-              👤 Al llegar a este bloque, el bot enviará el mensaje anterior, pausará automáticamente la atención robótica y abrirá la conversación en Chatwoot para tus agentes.
+              Al llegar a este bloque, el bot enviará el mensaje anterior, pausará automáticamente la atención robótica y abrirá la conversación en Chatwoot para tus agentes.
             </p>
           )}
 
@@ -284,8 +284,7 @@ function App() {
 
         {/* Banner de Estado si está apagado */}
         {!isBotActive && (
-          <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-2 text-amber-800 text-sm">
-            <span>⚠️</span>
+          <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 text-amber-800 text-sm">
             <span><strong>El bot se encuentra apagado:</strong> No responderá mensajes entrantes y todas las conversaciones quedarán abiertas directamente para tus agentes humanos.</span>
           </div>
         )}
@@ -294,8 +293,8 @@ function App() {
           
           {/* SECCIÓN 1: Comportamiento del Bot (Hasta Arriba) */}
           <section className="bg-gray-50/70 p-5 rounded-xl border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 mb-1 text-chatwoot flex items-center gap-2">
-              <span>🎯</span> Modo de Operación Principal
+            <h2 className="text-base font-bold text-gray-900 mb-1 text-chatwoot">
+              Modo de Operación Principal
             </h2>
             <p className="text-xs text-gray-500 mb-4">
               Selecciona la estrategia de atención. La interfaz inferior se adaptará automáticamente a tu selección.
@@ -389,8 +388,8 @@ function App() {
             <section className="space-y-4">
               <div className="border-b pb-2 flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-gray-900 text-chatwoot flex items-center gap-2">
-                    <span>🌳</span> Constructor de Flujos de Menú
+                  <h2 className="text-base font-bold text-gray-900 text-chatwoot">
+                    Constructor de Flujos de Menú
                   </h2>
                   <p className="text-xs text-gray-500 mt-0.5">
                     WhatsApp transformará automáticamente las opciones en <strong>Botones</strong> (hasta 3) o <strong>Menú de Lista</strong> (hasta 10).
@@ -410,8 +409,8 @@ function App() {
           {showAiSettings && (
             <section className="space-y-4">
               <div className="border-b pb-2">
-                <h2 className="text-base font-bold text-gray-900 text-chatwoot flex items-center gap-2">
-                  <span>🧠</span> Parámetros de Inteligencia Artificial (Gemini)
+                <h2 className="text-base font-bold text-gray-900 text-chatwoot">
+                  Parámetros de Inteligencia Artificial (Gemini)
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Define el comportamiento, tono y los límites de seguridad de la IA.
@@ -455,8 +454,8 @@ function App() {
           {/* SECCIÓN 4: Mensajes Generales del Sistema */}
           <section className="space-y-4">
             <div className="border-b pb-2">
-              <h2 className="text-base font-bold text-gray-900 text-chatwoot flex items-center gap-2">
-                <span>💬</span> Mensajes del Sistema
+              <h2 className="text-base font-bold text-gray-900 text-chatwoot">
+                Mensajes del Sistema
               </h2>
             </div>
 
