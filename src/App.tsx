@@ -225,10 +225,10 @@ function App() {
                 const arr = node.messages || [node.text];
                 updateNodeMessages(node.id, [...arr, '']);
               }}
-              className="text-xs text-chatwoot font-semibold flex items-center hover:underline"
+              className="text-xs text-chatwoot font-semibold flex items-center hover:underline mt-1"
             >
-              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-              + Añadir globo de texto
+              <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+              Añadir globo de texto
             </button>
           </div>
 
