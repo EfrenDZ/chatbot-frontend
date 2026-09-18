@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useChatwootContext } from './hooks/useChatwootContext';
 import './index.css';
+import { ApiService } from './services/api';
 
 type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF';
 
@@ -42,8 +43,7 @@ function App() {
 
   useEffect(() => {
     if (context?.accountId) {
-      fetch(`/api/config/${context.accountId}/metrics`)
-        .then(res => res.json())
+      ApiService.getMetrics(context.accountId)
         .then(data => setMetrics(data))
         .catch(err => console.error('Error cargando métricas:', err));
     }

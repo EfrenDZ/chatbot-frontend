@@ -4,6 +4,22 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
  * Cliente HTTP para comunicarse con el Backend del Bot SaaS.
  */
 export const ApiService = {
+
+  getMetrics: async (accountId: number) => {
+    const response = await fetch(`${API_BASE_URL}/api/config/${accountId}/metrics`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener las métricas');
+    }
+
+    return response.json();
+  },
+
   /**
    * Obtiene la configuración completa del bot para la cuenta actual.
    */
