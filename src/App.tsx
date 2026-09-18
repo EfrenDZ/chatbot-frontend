@@ -2,14 +2,41 @@ import { useState, useEffect } from 'react';
 import { useChatwootContext } from './hooks/useChatwootContext';
 import './index.css';
 
+interface MenuOptionUI {
+  id: string;
+  label: string;
+  response: string;
+}
+
 function App() {
   const { context, config, isLoading, error, saveConfig } = useChatwootContext();
   const [formData, setFormData] = useState<any>(null);
+
+  // Estados específicos para el Editor de Menú
+  const [welcomeText, setWelcomeText] = useState('');
+  const [menuOptions, setMenuOptions] = useState<MenuOptionUI[]>([]);
 
   // Sincronizar el estado local cuando llegue la configuración del servidor
   useEffect(() => {
     if (config) {
       setFormData(config);
+      
+      // Parsear el JSON del flowGraph al estado simplificado del frontend
+      if (config.flowGraph && config.flowGraph.nodes) {
+        const rootNode = config.flowGraph.nodes.find((n: any) => n.id === config.flowGraph.rootNodeId);
+        if (rootNode && rootNode.type === 'MENU') {
+          setWelcomeText(rootNode.text);
+          const extractedOptions: MenuOptionUI[] = (rootNode.options || []).map((opt: any) => {
+            const targetNode = config.flowGraph.nodes.find((n: any) => n.id === opt.targetNodeId);
+            return {
+              id: opt.id,
+              label: opt.label,
+              response: targetNode ? targetNode.text : ''
+            };
+          });
+          setMenuOptions(extractedOptions);
+        }
+      }
     }
   }, [config]);
 
@@ -23,7 +50,7 @@ function App() {
     );
   }
 
-  if (isLoading || !formData) {
+  if (isLoading && !formData) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-chatwoot"></div>
@@ -39,19 +66,64 @@ function App() {
     }));
   };
 
+  const handleOptionChange = (id: string, field: 'label' | 'response', value: string) => {
+    setMenuOptions(prev => prev.map(opt => opt.id === id ? { ...opt, [field]: value } : opt));
+  };
+
+  const handleAddOption = () => {
+    const newId = `opt-${Date.now()}`;
+    setMenuOptions(prev => [...prev, { id: newId, label: 'Nueva opción', response: 'Mensaje de respuesta...' }]);
+  };
+
+  const handleRemoveOption = (id: string) => {
+    setMenuOptions(prev => prev.filter(opt => opt.id !== id));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveConfig(formData);
+    
+    // 1. Reconstruir el flowGraph a partir de nuestro formulario dinámico
+    const nodes: any[] = [];
+    
+    // Nodo Raíz (Menú)
+    const rootNode = {
+      id: 'node-root',
+      type: 'MENU',
+      text: welcomeText,
+      options: menuOptions.map(opt => ({
+        id: opt.id,
+        label: opt.label,
+        targetNodeId: `node-${opt.id}`
+      }))
+    };
+    nodes.push(rootNode);
+
+    // Nodos de Respuesta (Mensajes)
+    menuOptions.forEach(opt => {
+      nodes.push({
+        id: `node-${opt.id}`,
+        type: 'MESSAGE',
+        text: opt.response
+      });
+    });
+
+    const flowGraph = { rootNodeId: 'node-root', nodes };
+
+    // 2. Guardar en Backend
+    saveConfig({
+      ...formData,
+      flowGraph
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 p-6 font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-800 p-6 font-sans pb-20">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         
         {/* Header */}
         <div className="bg-chatwoot px-6 py-4">
           <h1 className="text-xl font-semibold text-white">Configuración del Bot</h1>
-          <p className="text-chatwoot-100 text-sm text-blue-100 opacity-90">
+          <p className="text-blue-100 opacity-90 text-sm mt-1">
             ID de Cuenta: {context.accountId}
           </p>
         </div>
@@ -59,10 +131,71 @@ function App() {
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
           
-          {/* Sección 1: Modo de Operación */}
+          {/* NUEVA SECCIÓN: Creador de Menú */}
           <section>
-            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Modo de Operación</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">1. Opciones del Menú Principal</h2>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje de Bienvenida del Bot</label>
+              <textarea 
+                rows={3}
+                value={welcomeText} 
+                onChange={(e) => setWelcomeText(e.target.value)}
+                className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot"
+                placeholder="¡Hola! Bienvenido. Por favor elige una opción:"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">Botones del menú interactivo</label>
+              {menuOptions.map((opt, index) => (
+                <div key={opt.id} className="bg-gray-50 p-4 border border-gray-200 rounded-md flex flex-col gap-3 relative">
+                  <button 
+                    type="button" 
+                    onClick={() => handleRemoveOption(opt.id)}
+                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 text-sm font-medium"
+                  >
+                    Eliminar
+                  </button>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Opción {index + 1} (Texto del botón)</label>
+                    <input 
+                      type="text" 
+                      value={opt.label} 
+                      onChange={(e) => handleOptionChange(opt.id, 'label', e.target.value)}
+                      className="w-full md:w-1/2 border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                      placeholder="Ej: 1. Ver Precios"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Respuesta del Bot</label>
+                    <textarea 
+                      rows={2}
+                      value={opt.response} 
+                      onChange={(e) => handleOptionChange(opt.id, 'response', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                      placeholder="Respuesta automática cuando el cliente hace clic en esta opción."
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <button 
+                type="button" 
+                onClick={handleAddOption}
+                className="mt-2 text-sm bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md font-medium"
+              >
+                + Añadir Opción
+              </button>
+            </div>
+          </section>
+
+          {/* Sección: Modo de Operación */}
+          <section>
+            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">2. Configuración de Inteligencia Artificial</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Comportamiento del Bot</label>
                 <select 
@@ -78,7 +211,7 @@ function App() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Errores antes de IA / Handoff</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Errores antes de invocar IA o Asesor</label>
                 <input 
                   type="number" 
                   name="maxConsecutiveErrors" 
@@ -88,14 +221,10 @@ function App() {
                 />
               </div>
             </div>
-          </section>
 
-          {/* Sección 2: Inteligencia Artificial */}
-          <section>
-            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Configuración de IA</h2>
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Límite de Mensajes (Tokens)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Límite de Mensajes (IA)</label>
                 <input 
                   type="number" 
                   name="maxAiMessages" 
@@ -103,11 +232,11 @@ function App() {
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot"
                 />
-                <p className="text-xs text-gray-500 mt-1">Cuántos mensajes puede intercambiar la IA antes de transferir a un humano forzosamente.</p>
+                <p className="text-xs text-gray-500 mt-1">Cuántos mensajes seguidos puede intercambiar la IA antes de transferir a un humano forzosamente.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prompt del Sistema (Instrucciones)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prompt del Sistema (Instrucciones para la IA)</label>
                 <textarea 
                   name="systemPrompt" 
                   rows={4}
@@ -120,12 +249,12 @@ function App() {
             </div>
           </section>
 
-          {/* Sección 3: Mensajes del Sistema */}
+          {/* Sección: Mensajes del Sistema */}
           <section>
-            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Mensajes del Sistema</h2>
+            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">3. Mensajes Generales</h2>
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje de Transferencia (Handoff)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje de Transferencia (Handoff a humano)</label>
                 <input 
                   type="text" 
                   name="handoffMessage" 
@@ -142,9 +271,9 @@ function App() {
             <button 
               type="submit" 
               disabled={isLoading}
-              className="bg-chatwoot hover:bg-blue-600 text-white px-6 py-2 rounded-md shadow-sm font-medium transition-colors disabled:opacity-50"
+              className="bg-chatwoot hover:bg-blue-600 text-white px-8 py-3 rounded-md shadow-sm font-bold text-lg transition-colors disabled:opacity-50"
             >
-              {isLoading ? 'Guardando...' : 'Guardar Configuración'}
+              {isLoading ? 'Guardando...' : 'Guardar y Aplicar Cambios'}
             </button>
           </div>
         </form>
