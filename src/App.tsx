@@ -54,6 +54,9 @@ function App() {
     );
   }
 
+  const botMode = formData?.botMode || 'HYBRID';
+  useEffect(() => { if (botMode === 'OPTIONS' && activeTab === 'AI') setActiveTab('FLOW'); if (botMode === 'AI' && activeTab === 'FLOW') setActiveTab('AI'); }, [botMode, activeTab]);
+
   if (isLoading || !formData) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -63,9 +66,7 @@ function App() {
   }
 
   const isBotActive = formData.isActive !== false;
-  const botMode = formData.botMode || 'HYBRID';
   const showFlowBuilder = botMode === 'OPTIONS' || botMode === 'HYBRID';
-  useEffect(() => { if (botMode === 'OPTIONS' && activeTab === 'AI') setActiveTab('FLOW'); if (botMode === 'AI' && activeTab === 'FLOW') setActiveTab('AI'); }, [botMode, activeTab]);
   const showAiSettings = botMode === 'AI' || botMode === 'HYBRID';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -425,7 +426,7 @@ function App() {
           {/* NAVEGACIÓN POR PESTAÑAS */}
           <div className="border-b border-gray-200 mt-8 mb-6">
             <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-              {activeTab === 'FLOW' && showFlowBuilder && (
+              {showFlowBuilder && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('FLOW')}
@@ -442,7 +443,7 @@ function App() {
                 </button>
               )}
               
-              {activeTab === 'AI' && showAiSettings && (
+              {showAiSettings && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('AI')}
@@ -477,7 +478,7 @@ function App() {
           </div>
 
           {/* SECCIÓN 2: Constructor de Flujos (Condicional: OPTIONS o HYBRID) */}
-          {showFlowBuilder && (
+          {activeTab === 'FLOW' && showFlowBuilder && (
             <section className="space-y-4">
               <div className="border-b pb-2 flex items-center justify-between">
                 <div>
@@ -499,7 +500,7 @@ function App() {
           )}
 
           {/* SECCIÓN 3: Configuración de Inteligencia Artificial (Condicional: AI o HYBRID) */}
-          {showAiSettings && (
+          {activeTab === 'AI' && showAiSettings && (
             <section className="space-y-4">
               <div className="border-b pb-2">
                 <h2 className="text-base font-bold text-gray-900 text-chatwoot">
