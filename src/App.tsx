@@ -2,40 +2,39 @@ import { useState, useEffect } from 'react';
 import { useChatwootContext } from './hooks/useChatwootContext';
 import './index.css';
 
-interface MenuOptionUI {
+type NodeType = 'MENU' | 'MESSAGE' | 'AI';
+
+interface FlowOption {
   id: string;
   label: string;
-  response: string;
+  targetNodeId: string;
+}
+
+interface FlowNode {
+  id: string;
+  type: NodeType;
+  text: string;
+  options?: FlowOption[];
 }
 
 function App() {
   const { context, config, isLoading, error, saveConfig } = useChatwootContext();
   const [formData, setFormData] = useState<any>(null);
 
-  // Estados específicos para el Editor de Menú
-  const [welcomeText, setWelcomeText] = useState('');
-  const [menuOptions, setMenuOptions] = useState<MenuOptionUI[]>([]);
+  // Estados del Flujo (Árbol N-Niveles)
+  const [nodes, setNodes] = useState<FlowNode[]>([]);
+  const [rootNodeId, setRootNodeId] = useState<string>('node-root');
 
-  // Sincronizar el estado local cuando llegue la configuración del servidor
   useEffect(() => {
     if (config) {
       setFormData(config);
-      
-      // Parsear el JSON del flowGraph al estado simplificado del frontend
-      if (config.flowGraph && config.flowGraph.nodes) {
-        const rootNode = config.flowGraph.nodes.find((n: any) => n.id === config.flowGraph.rootNodeId);
-        if (rootNode && rootNode.type === 'MENU') {
-          setWelcomeText(rootNode.text);
-          const extractedOptions: MenuOptionUI[] = (rootNode.options || []).map((opt: any) => {
-            const targetNode = config.flowGraph.nodes.find((n: any) => n.id === opt.targetNodeId);
-            return {
-              id: opt.id,
-              label: opt.label,
-              response: targetNode ? targetNode.text : ''
-            };
-          });
-          setMenuOptions(extractedOptions);
-        }
+      if (config.flowGraph && config.flowGraph.nodes && config.flowGraph.nodes.length > 0) {
+        setNodes(config.flowGraph.nodes);
+        setRootNodeId(config.flowGraph.rootNodeId || config.flowGraph.nodes[0].id);
+      } else {
+        // Init default
+        setNodes([{ id: 'node-root', type: 'MENU', text: '¡Hola! Bienvenido. Elige una opción:', options: [] }]);
+        setRootNodeId('node-root');
       }
     }
   }, [config]);
@@ -66,135 +65,188 @@ function App() {
     }));
   };
 
-  const handleOptionChange = (id: string, field: 'label' | 'response', value: string) => {
-    setMenuOptions(prev => prev.map(opt => opt.id === id ? { ...opt, [field]: value } : opt));
+  // --- MUTADORES DEL GRAFO ---
+  const updateNodeText = (nodeId: string, text: string) => {
+    setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, text } : n));
   };
 
-  const handleAddOption = () => {
-    const newId = `opt-${Date.now()}`;
-    setMenuOptions(prev => [...prev, { id: newId, label: 'Nueva opción', response: 'Mensaje de respuesta...' }]);
+  const updateNodeType = (nodeId: string, type: NodeType) => {
+    setNodes(prev => prev.map(n => {
+      if (n.id !== nodeId) return n;
+      if (type === 'MENU' && !n.options) return { ...n, type, options: [] };
+      return { ...n, type };
+    }));
   };
 
-  const handleRemoveOption = (id: string) => {
-    setMenuOptions(prev => prev.filter(opt => opt.id !== id));
+  const updateOptionLabel = (nodeId: string, optionId: string, label: string) => {
+    setNodes(prev => prev.map(n => {
+      if (n.id !== nodeId || !n.options) return n;
+      return {
+        ...n,
+        options: n.options.map(o => o.id === optionId ? { ...o, label } : o)
+      };
+    }));
+  };
+
+  const addOption = (nodeId: string) => {
+    const newTargetId = `node-${Date.now()}`;
+    const newOptionId = `opt-${Date.now()}`;
+    
+    const newNode: FlowNode = {
+      id: newTargetId,
+      type: 'MESSAGE',
+      text: 'Nueva respuesta o menú...'
+    };
+
+    setNodes(prev => {
+      const parentUpdated = prev.map(n => {
+        if (n.id !== nodeId) return n;
+        return {
+          ...n,
+          options: [...(n.options || []), { id: newOptionId, label: 'Nueva Opción', targetNodeId: newTargetId }]
+        };
+      });
+      return [...parentUpdated, newNode];
+    });
+  };
+
+  const removeOption = (parentNodeId: string, optionId: string, targetNodeId: string) => {
+    const getDescendants = (tId: string, allNodes: FlowNode[]): string[] => {
+      const tNode = allNodes.find(n => n.id === tId);
+      if (!tNode) return [];
+      let desc = [tId];
+      if (tNode.options) {
+        tNode.options.forEach(o => {
+           desc = desc.concat(getDescendants(o.targetNodeId, allNodes));
+        });
+      }
+      return desc;
+    };
+
+    setNodes(prev => {
+      const idsToRemove = getDescendants(targetNodeId, prev);
+      const updatedParent = prev.map(n => {
+        if (n.id === parentNodeId && n.options) {
+          return { ...n, options: n.options.filter(o => o.id !== optionId) };
+        }
+        return n;
+      });
+      return updatedParent.filter(n => !idsToRemove.includes(n.id));
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 1. Reconstruir el flowGraph a partir de nuestro formulario dinámico
-    const nodes: any[] = [];
-    
-    // Nodo Raíz (Menú)
-    const rootNode = {
-      id: 'node-root',
-      type: 'MENU',
-      text: welcomeText,
-      options: menuOptions.map(opt => ({
-        id: opt.id,
-        label: opt.label,
-        targetNodeId: `node-${opt.id}`
-      }))
-    };
-    nodes.push(rootNode);
-
-    // Nodos de Respuesta (Mensajes)
-    menuOptions.forEach(opt => {
-      nodes.push({
-        id: `node-${opt.id}`,
-        type: 'MESSAGE',
-        text: opt.response
-      });
-    });
-
-    const flowGraph = { rootNodeId: 'node-root', nodes };
-
-    // 2. Guardar en Backend
     saveConfig({
       ...formData,
-      flowGraph
+      flowGraph: { rootNodeId, nodes }
     });
+  };
+
+  // --- RENDER RECURSIVO DEL GRAFO ---
+  const renderNode = (nodeId: string, depth: number = 0, isRoot: boolean = false) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return null;
+
+    return (
+      <div key={node.id} className={`relative ${isRoot ? '' : 'pl-6 border-l-2 border-gray-200 ml-4 mt-4'}`}>
+        {!isRoot && <div className="absolute -left-[2px] top-6 w-6 h-0.5 bg-gray-200"></div>}
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center mb-3">
+            <span className={`text-xs font-bold uppercase tracking-wider ${isRoot ? 'text-chatwoot' : 'text-gray-500'}`}>
+              {isRoot ? '🚀 Punto de Inicio' : '↳ Acción / Respuesta'}
+            </span>
+            <select
+              value={node.type}
+              onChange={(e) => updateNodeType(node.id, e.target.value as NodeType)}
+              className="text-sm border border-gray-300 rounded p-1 focus:ring-chatwoot focus:border-chatwoot bg-gray-50"
+            >
+              <option value="MESSAGE">Mensaje de Texto (Fin)</option>
+              <option value="MENU">Sub-Menú de Opciones</option>
+              <option value="AI">Delegar a Inteligencia Artificial</option>
+            </select>
+          </div>
+
+          <textarea
+            rows={node.type === 'MENU' ? 2 : 3}
+            value={node.text}
+            onChange={(e) => updateNodeText(node.id, e.target.value)}
+            placeholder={node.type === 'AI' ? "Instrucción oculta para la IA antes de delegarle..." : "Escribe el mensaje del bot aquí..."}
+            className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-chatwoot focus:border-chatwoot mb-1 font-medium text-gray-800"
+          />
+
+          {node.type === 'MENU' && (
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <p className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Opciones del usuario:</p>
+              <div className="space-y-2">
+                {node.options?.map((opt, index) => (
+                  <div key={opt.id} className="relative bg-gray-50 p-3 rounded border border-gray-100">
+                    <div className="flex gap-2 items-center">
+                      <span className="text-gray-400 font-mono text-sm font-bold">{index + 1}.</span>
+                      <input
+                        type="text"
+                        value={opt.label}
+                        onChange={(e) => updateOptionLabel(node.id, opt.id, e.target.value)}
+                        placeholder="Ej: Ver precios"
+                        className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-chatwoot focus:border-chatwoot bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeOption(node.id, opt.id, opt.targetNodeId)}
+                        className="text-red-400 hover:text-red-600 text-sm p-2 font-bold"
+                        title="Eliminar opción y su rama"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {/* RECURSIÓN: Renderizar el nodo hijo */}
+                    {renderNode(opt.targetNodeId, depth + 1, false)}
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => addOption(node.id)}
+                className="mt-3 text-sm font-semibold text-chatwoot hover:text-blue-700 bg-blue-50/50 border border-blue-100 px-4 py-2 rounded-md w-full text-left transition-colors"
+              >
+                + Añadir Nueva Opción
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 p-6 font-sans pb-20">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
         
-        {/* Header */}
         <div className="bg-chatwoot px-6 py-4">
-          <h1 className="text-xl font-semibold text-white">Configuración del Bot</h1>
+          <h1 className="text-xl font-semibold text-white">Configuración del Bot (Modo Avanzado)</h1>
           <p className="text-blue-100 opacity-90 text-sm mt-1">
             ID de Cuenta: {context.accountId}
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-8">
+        <form onSubmit={handleSubmit} className="p-6 space-y-10">
           
-          {/* NUEVA SECCIÓN: Creador de Menú */}
           <section>
-            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">1. Opciones del Menú Principal</h2>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje de Bienvenida del Bot</label>
-              <textarea 
-                rows={3}
-                value={welcomeText} 
-                onChange={(e) => setWelcomeText(e.target.value)}
-                className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot"
-                placeholder="¡Hola! Bienvenido. Por favor elige una opción:"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700">Botones del menú interactivo</label>
-              {menuOptions.map((opt, index) => (
-                <div key={opt.id} className="bg-gray-50 p-4 border border-gray-200 rounded-md flex flex-col gap-3 relative">
-                  <button 
-                    type="button" 
-                    onClick={() => handleRemoveOption(opt.id)}
-                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 text-sm font-medium"
-                  >
-                    Eliminar
-                  </button>
-                  
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Opción {index + 1} (Texto del botón)</label>
-                    <input 
-                      type="text" 
-                      value={opt.label} 
-                      onChange={(e) => handleOptionChange(opt.id, 'label', e.target.value)}
-                      className="w-full md:w-1/2 border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
-                      placeholder="Ej: 1. Ver Precios"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Respuesta del Bot</label>
-                    <textarea 
-                      rows={2}
-                      value={opt.response} 
-                      onChange={(e) => handleOptionChange(opt.id, 'response', e.target.value)}
-                      className="w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
-                      placeholder="Respuesta automática cuando el cliente hace clic en esta opción."
-                    />
-                  </div>
-                </div>
-              ))}
-
-              <button 
-                type="button" 
-                onClick={handleAddOption}
-                className="mt-2 text-sm bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md font-medium"
-              >
-                + Añadir Opción
-              </button>
+            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-6 text-chatwoot">1. Constructor de Flujos</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Construye menús infinitos. Cambia el tipo de bloque a <strong>Sub-Menú</strong> para ramificar, a <strong>Mensaje</strong> para dar información final, o a <strong>Delegar a IA</strong> para que Gemini tome el control de esa rama.
+            </p>
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 overflow-x-auto">
+              <div className="min-w-[600px]">
+                {renderNode(rootNodeId, 0, true)}
+              </div>
             </div>
           </section>
 
-          {/* Sección: Modo de Operación */}
           <section>
-            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">2. Configuración de Inteligencia Artificial</h2>
+            <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">2. Inteligencia Artificial (Avanzado)</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Comportamiento del Bot</label>
@@ -202,16 +254,16 @@ function App() {
                   name="botMode" 
                   value={formData.botMode} 
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot"
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot bg-white"
                 >
-                  <option value="OPTIONS">Solo Menú Estricto (Sin IA)</option>
-                  <option value="AI">Solo Inteligencia Artificial</option>
-                  <option value="HYBRID">Híbrido (Menú primero, IA como respaldo)</option>
+                  <option value="OPTIONS">Solo Menú Estricto (Ignora IA)</option>
+                  <option value="AI">Solo Inteligencia Artificial (Ignora Menú)</option>
+                  <option value="HYBRID">Híbrido (Menú primero, IA si falla o delega)</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Errores antes de invocar IA o Asesor</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Errores antes de invocar IA / Asesor</label>
                 <input 
                   type="number" 
                   name="maxConsecutiveErrors" 
@@ -224,7 +276,7 @@ function App() {
 
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Límite de Mensajes (IA)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Límite de Tokens (Interacciones IA)</label>
                 <input 
                   type="number" 
                   name="maxAiMessages" 
@@ -232,24 +284,21 @@ function App() {
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot"
                 />
-                <p className="text-xs text-gray-500 mt-1">Cuántos mensajes seguidos puede intercambiar la IA antes de transferir a un humano forzosamente.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prompt del Sistema (Instrucciones para la IA)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prompt del Sistema Central</label>
                 <textarea 
                   name="systemPrompt" 
                   rows={4}
                   value={formData.systemPrompt} 
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-chatwoot focus:border-chatwoot"
-                  placeholder="Eres un asistente útil y amable..."
                 />
               </div>
             </div>
           </section>
 
-          {/* Sección: Mensajes del Sistema */}
           <section>
             <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4 text-chatwoot">3. Mensajes Generales</h2>
             <div className="grid grid-cols-1 gap-6">
@@ -266,7 +315,6 @@ function App() {
             </div>
           </section>
 
-          {/* Footer Actions */}
           <div className="pt-4 border-t flex justify-end">
             <button 
               type="submit" 
