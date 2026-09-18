@@ -208,6 +208,7 @@ function App() {
                 />
                 {arr.length > 1 && (
                   <button
+                    type="button"
                     onClick={() => {
                       const newMsgs = arr.filter((_, i) => i !== idx);
                       updateNodeMessages(node.id, newMsgs);
@@ -221,6 +222,7 @@ function App() {
               </div>
             ))}
             <button
+              type="button"
               onClick={() => {
                 const arr = node.messages || [node.text];
                 updateNodeMessages(node.id, [...arr, '']);
