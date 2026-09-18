@@ -86,18 +86,6 @@ function App() {
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, messages, text: messages[messages.length - 1] || '' } : n));
   };
 
-  const updateNodeText = (nodeId: string, text: string) => {
-    setNodes(prev => prev.map(n => {
-      if (n.id === nodeId) {
-        const msgs = n.messages || [n.text];
-        const newMsgs = [...msgs];
-        newMsgs[newMsgs.length - 1] = text;
-        return { ...n, text, messages: newMsgs };
-      }
-      return n;
-    }));
-  };
-
   const updateNodeType = (nodeId: string, type: NodeType) => {
     setNodes(prev => prev.map(n => {
       if (n.id !== nodeId) return n;
