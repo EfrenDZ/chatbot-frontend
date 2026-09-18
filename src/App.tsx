@@ -20,7 +20,7 @@ interface FlowNode {
 }
 
 function App() {
-  const { context, config, isLoading, error, saveConfig } = useChatwootContext();
+  const { context, config, isLoading, isSaving, notification, error, saveConfig } = useChatwootContext();
   const [formData, setFormData] = useState<any>(null);
 
   // Estados del Flujo (Árbol N-Niveles)
@@ -905,14 +905,30 @@ function App() {
           <div className="pt-4 border-t flex justify-end">
             <button 
               type="submit" 
-              disabled={isLoading}
-              className="bg-chatwoot hover:bg-blue-600 text-white px-8 py-3 rounded-lg shadow-sm font-bold text-base transition-colors disabled:opacity-50 cursor-pointer"
+              disabled={isSaving}
+              className={`bg-chatwoot hover:bg-blue-600 text-white px-8 py-3 rounded-lg shadow-sm font-bold text-base transition-colors flex items-center gap-2 cursor-pointer ${isSaving ? 'opacity-75 cursor-not-allowed' : ''}`}
             >
-              {isLoading ? 'Guardando...' : 'Guardar y Aplicar Cambios'}
+              {isSaving ? (
+                <><svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Guardando...</>
+              ) : (
+                'Guardar y Aplicar Cambios'
+              )}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Toast Notification */}
+      {notification && (
+        <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white flex items-center gap-2 transition-all transform duration-300 ${notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {notification.type === 'success' ? (
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+          ) : (
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          )}
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 }

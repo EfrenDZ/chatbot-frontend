@@ -10,6 +10,8 @@ export function useChatwootContext() {
   const [context, setContext] = useState<ChatwootContext>({ accountId: null, conversationId: null });
   const [config, setConfig] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'success'|'error'} | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchConfigForAccount = async (accountId: number, conversationId: number | null = null) => {
@@ -98,17 +100,19 @@ export function useChatwootContext() {
   const saveConfig = async (newConfig: any) => {
     if (!context.accountId) return;
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       const updatedData = await ApiService.updateBotConfig(context.accountId, newConfig);
       setConfig(updatedData);
-      alert('¡Configuración guardada exitosamente!');
+      setNotification({ message: '¡Configuración guardada exitosamente!', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       console.error(err);
-      alert('Error al guardar la configuración.');
+      setNotification({ message: 'Error al guardar la configuración.', type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  return { context, config, isLoading, error, saveConfig };
+  return { context, config, isLoading, isSaving, notification, error, saveConfig };
 }
