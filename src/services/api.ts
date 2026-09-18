@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const rawUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = rawUrl.replace(/\/+$/, '');
 
 /**
  * Cliente HTTP para comunicarse con el Backend del Bot SaaS.
