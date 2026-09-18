@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useChatwootContext } from './hooks/useChatwootContext';
 import './index.css';
 
-type NodeType = 'MENU' | 'MESSAGE' | 'AI';
+type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF';
 
 interface FlowOption {
   id: string;
@@ -154,8 +154,8 @@ function App() {
         
         <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex justify-between items-center mb-3">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isRoot ? 'text-chatwoot' : 'text-gray-500'}`}>
-              {isRoot ? '🚀 Punto de Inicio' : '↳ Acción / Respuesta'}
+            <span className={`text-xs font-bold uppercase tracking-wider ${isRoot ? 'text-chatwoot' : node.type === 'HANDOFF' ? 'text-amber-600' : 'text-gray-500'}`}>
+              {isRoot ? '🚀 Punto de Inicio' : node.type === 'HANDOFF' ? '👤 Transferir a Asesor Humano' : '↳ Acción / Respuesta'}
             </span>
             <select
               value={node.type}
@@ -165,6 +165,7 @@ function App() {
               <option value="MESSAGE">Mensaje de Texto (Fin)</option>
               <option value="MENU">Sub-Menú de Opciones</option>
               <option value="AI">Delegar a Inteligencia Artificial</option>
+              <option value="HANDOFF">Transferir a un Asesor Humano</option>
             </select>
           </div>
 
@@ -172,9 +173,21 @@ function App() {
             rows={node.type === 'MENU' ? 2 : 3}
             value={node.text}
             onChange={(e) => updateNodeText(node.id, e.target.value)}
-            placeholder={node.type === 'AI' ? "Instrucción oculta para la IA antes de delegarle..." : "Escribe el mensaje del bot aquí..."}
+            placeholder={
+              node.type === 'AI' 
+                ? "Instrucción oculta para la IA antes de delegarle..." 
+                : node.type === 'HANDOFF'
+                ? "Mensaje al cliente antes de transferir (ej: 'Te estoy transfiriendo con un asesor humano...')"
+                : "Escribe el mensaje del bot aquí..."
+            }
             className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-chatwoot focus:border-chatwoot mb-1 font-medium text-gray-800"
           />
+
+          {node.type === 'HANDOFF' && (
+            <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
+              👤 Al elegir esta opción, el bot enviará el mensaje anterior, se pausará automáticamente y marcará la conversación en Chatwoot como abierta para que un humano responda.
+            </p>
+          )}
 
           {node.type === 'MENU' && (
             <div className="mt-4 border-t border-gray-100 pt-4">
