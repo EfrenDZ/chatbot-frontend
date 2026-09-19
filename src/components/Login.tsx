@@ -22,6 +22,9 @@ export const Login = ({ onSuccess }: LoginProps) => {
       const data = await ApiService.login(email, password, cwApiUrl);
       
       localStorage.setItem('zabotek_auth_token', data.token);
+      if (data.user?.accounts?.length > 0) {
+        localStorage.setItem('zabotek_default_account', data.user.accounts[0].id.toString());
+      }
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');

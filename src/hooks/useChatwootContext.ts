@@ -1,3 +1,8 @@
+declare global {
+  interface Window {
+    chatwootIframeActive: boolean;
+  }
+}
 import { useState, useEffect } from 'react';
 import { ApiService } from '../services/api';
 
@@ -35,6 +40,17 @@ export function useChatwootContext() {
   };
 
   useEffect(() => {
+    // Si estamos fuera de Chatwoot (standalone) y ya hay cuenta por defecto, usarla al inicio
+    const defaultAcc = localStorage.getItem('zabotek_default_account');
+    if (defaultAcc && !context.accountId) {
+      // Pequeño retraso para dar prioridad al iframe si existe
+      setTimeout(() => {
+        if (!window.chatwootIframeActive) {
+          fetchConfigForAccount(parseInt(defaultAcc, 10));
+        }
+      }, 500);
+    }
+
     // 1. Escuchar eventos postMessage de Chatwoot Dashboard App
     const handleMessage = (event: MessageEvent) => {
       let payload = event.data;
@@ -47,6 +63,7 @@ export function useChatwootContext() {
       }
 
       // Chatwoot envía datos de contexto dentro de conversation o currentAgent
+      window.chatwootIframeActive = true;
       const accountId = 
         payload?.data?.conversation?.account_id ||
         payload?.data?.currentAgent?.account_id ||
