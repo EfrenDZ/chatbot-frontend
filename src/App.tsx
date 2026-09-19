@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useChatwootContext } from './hooks/useChatwootContext';
 import './index.css';
 import { ApiService } from './services/api';
+import { Login } from './components/Login';
 
 type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF' | 'RESTART' | 'RESOLVE';
 
@@ -20,7 +21,7 @@ interface FlowNode {
 }
 
 function App() {
-  const { context, config, isLoading, isSaving, notification, error, saveConfig } = useChatwootContext();
+  const { context, config, isLoading, isSaving, notification, error, isAuthenticated, setIsAuthenticated, saveConfig, fetchConfigForAccount } = useChatwootContext();
   const [formData, setFormData] = useState<any>(null);
 
   // Estados del Flujo (Árbol N-Niveles)
@@ -78,6 +79,14 @@ function App() {
 
   const botMode = formData?.botMode || 'HYBRID';
   useEffect(() => { if (botMode === 'OPTIONS' && activeTab === 'AI') setActiveTab('FLOW'); if (botMode === 'AI' && activeTab === 'FLOW') setActiveTab('AI'); }, [botMode, activeTab]);
+
+  if (!isAuthenticated) {
+    return <Login onSuccess={() => {
+      setIsAuthenticated(true);
+      if (context.accountId) fetchConfigForAccount(context.accountId, context.conversationId);
+      else fetchConfigForAccount(1); // Default
+    }} />;
+  }
 
   if (isLoading || !formData) {
     return (

@@ -13,6 +13,7 @@ export function useChatwootContext() {
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success'|'error'} | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('zabotek_auth_token'));
 
   const fetchConfigForAccount = async (accountId: number, conversationId: number | null = null) => {
     try {
@@ -21,9 +22,13 @@ export function useChatwootContext() {
       const data = await ApiService.getBotConfig(accountId);
       setConfig(data);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Error al conectar con la base de datos o inicializar el perfil.');
+      if (err.message === 'No autorizado') {
+        setIsAuthenticated(false);
+      } else {
+        setError('Error al conectar con la base de datos o inicializar el perfil.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -114,5 +119,5 @@ export function useChatwootContext() {
     }
   };
 
-  return { context, config, isLoading, isSaving, notification, error, saveConfig };
+  return { context, config, isLoading, isSaving, notification, error, isAuthenticated, setIsAuthenticated, saveConfig, fetchConfigForAccount };
 }
