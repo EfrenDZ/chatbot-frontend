@@ -73,15 +73,9 @@ function App() {
     }
   }, [config]);
 
-  if (error) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-red-50">
-        <div className="text-center text-red-600 font-medium p-4 border border-red-200 rounded-md bg-white shadow-xs">
-          {error}
-        </div>
-      </div>
-    );
-  }
+
+
+
 
 
 
@@ -91,6 +85,16 @@ function App() {
       if (context.accountId) fetchConfigForAccount(context.accountId, context.conversationId);
       else fetchConfigForAccount(1); // Default
     }} />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-red-50">
+        <div className="text-center text-red-600 font-medium p-4 border border-red-200 rounded-md bg-white shadow-xs">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   if (isLoading || !formData) {

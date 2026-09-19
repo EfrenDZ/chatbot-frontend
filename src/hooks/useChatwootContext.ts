@@ -110,19 +110,10 @@ export function useChatwootContext() {
       const parsedId = parseInt(accountIdParam, 10);
       fetchConfigForAccount(parsedId, conversationIdParam ? parseInt(conversationIdParam, 10) : null);
     } else {
-      // Si pasan 3 segundos y Chatwoot no ha respondido con postMessage ni hay query params
-      const timeout = setTimeout(() => {
-        setIsLoading((currentLoading) => {
-          if (currentLoading) {
-            setError('Esperando identificación de Chatwoot... (Si estás probando fuera de Chatwoot, agrega ?account_id=1 a la URL)');
-          }
-          return false;
-        });
-      }, 3500);
-
+      // Finalizamos el estado de carga inicial
+      setTimeout(() => setIsLoading(false), 500);
       return () => {
         window.removeEventListener('message', handleMessage);
-        clearTimeout(timeout);
       };
     }
 
