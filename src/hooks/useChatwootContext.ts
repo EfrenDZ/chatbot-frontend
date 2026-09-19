@@ -62,6 +62,18 @@ export function useChatwootContext() {
         }
       }
 
+      // Si no estamos autenticados y recibimos postMessage de Chatwoot, hacemos auto-login silencioso
+      const accountIdRaw = payload?.data?.conversation?.account_id || payload?.data?.currentAgent?.account_id || payload?.data?.account?.id || payload?.conversation?.account_id || payload?.account?.id;
+      
+      if (accountIdRaw && !localStorage.getItem('zabotek_auth_token')) {
+         ApiService.iframeAutoLogin(accountIdRaw).then(data => {
+            localStorage.setItem('zabotek_auth_token', data.token);
+            setIsAuthenticated(true);
+            fetchConfigForAccount(accountIdRaw);
+         }).catch(console.error);
+         return; // Evita doble fetch
+      }
+
       // Chatwoot envía datos de contexto dentro de conversation o currentAgent
       window.chatwootIframeActive = true;
       const accountId = 

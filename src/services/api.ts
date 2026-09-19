@@ -27,6 +27,15 @@ export const ApiService = {
     return response.json(); // { token, user }
   },
 
+    iframeAutoLogin: async (accountId: number) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/iframe-bypass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId }),
+    });
+    if (!response.ok) throw new Error('Bypass falló');
+    return response.json();
+  },
   getMetrics: async (accountId: number) => {
     const response = await fetch(`${API_BASE_URL}/api/config/${accountId}/metrics`, {
       method: 'GET',
