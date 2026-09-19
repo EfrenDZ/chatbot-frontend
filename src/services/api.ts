@@ -68,9 +68,8 @@ export const ApiService = {
   },
 
   updateBotConfig: async (accountId: number, data: any) => {
-    // Es POST o PUT? En backend es POST para crear/actualizar
     const response = await fetch(`${API_BASE_URL}/api/config/${accountId}`, {
-      method: 'POST',
+      method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
