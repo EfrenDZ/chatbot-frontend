@@ -3,7 +3,7 @@ import { useChatwootContext } from './hooks/useChatwootContext';
 import './index.css';
 import { ApiService } from './services/api';
 
-type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF';
+type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF' | 'RESTART' | 'RESOLVE';
 
 interface FlowOption {
   id: string;
