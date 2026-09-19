@@ -31,6 +31,12 @@ function App() {
   const [metrics, setMetrics] = useState<any>(null);
   const [aiSubTab, setAiSubTab] = useState<'GENERAL' | 'CATALOG' | 'FAQS' | 'BRANCHES'>('GENERAL');
 
+  const botMode = formData?.botMode || 'HYBRID';
+  useEffect(() => { 
+    if (botMode === 'OPTIONS' && activeTab === 'AI') setActiveTab('FLOW'); 
+    if (botMode === 'AI' && activeTab === 'FLOW') setActiveTab('AI'); 
+  }, [botMode, activeTab]);
+
   const updateAiKnowledge = (key: string, value: any) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -77,8 +83,7 @@ function App() {
     );
   }
 
-  const botMode = formData?.botMode || 'HYBRID';
-  useEffect(() => { if (botMode === 'OPTIONS' && activeTab === 'AI') setActiveTab('FLOW'); if (botMode === 'AI' && activeTab === 'FLOW') setActiveTab('AI'); }, [botMode, activeTab]);
+
 
   if (!isAuthenticated) {
     return <Login onSuccess={() => {
