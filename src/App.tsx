@@ -262,7 +262,7 @@ function App() {
           </div>
 
           <div className="space-y-2">
-            {(node.messages || [node.text]).map((msg, idx, arr) => (
+            {node.type !== 'WEBHOOK' && (node.messages || [node.text]).map((msg, idx, arr) => (
               <div key={idx} className="relative">
                 <textarea
                   rows={node.type === 'MENU' && idx === arr.length - 1 ? 2 : 2}
@@ -350,14 +350,38 @@ function App() {
                   </select>
                 </div>
               </div>
-              <div className="mb-4">
-                <label className="text-xs font-semibold text-gray-500 uppercase">Headers JSON (Auth):</label>
-                <textarea value={node.headers ? JSON.stringify(node.headers) : ''} onChange={(e) => {
-                  try {
-                    const h = e.target.value ? JSON.parse(e.target.value) : undefined;
-                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, headers: h } : n));
-                  } catch(e) {} // ignore invalid json while typing
-                }} placeholder='{"x-api-key": "secret"}' rows={2} className="w-full border rounded p-2 text-sm mt-1 font-mono" />
+              <div className="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
+                <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Credenciales o Headers (Opcional):</label>
+                <div className="space-y-2">
+                  {Object.entries(node.headers || {}).map(([k, v]) => (
+                    <div key={k} className="flex gap-2">
+                      <input type="text" value={k} readOnly className="w-1/3 border border-gray-300 rounded p-1.5 text-xs bg-gray-100 font-mono text-gray-500" />
+                      <input type="text" value={v as string} onChange={(e) => {
+                        const h = { ...node.headers, [k]: e.target.value };
+                        setNodes(prev => prev.map(n => n.id === node.id ? { ...n, headers: h } : n));
+                      }} className="flex-1 border border-gray-300 rounded p-1.5 text-xs" />
+                      <button type="button" onClick={() => {
+                        const h = { ...node.headers };
+                        delete h[k];
+                        setNodes(prev => prev.map(n => n.id === node.id ? { ...n, headers: h } : n));
+                      }} className="text-red-400 hover:text-red-600 font-bold px-2">✕</button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 mt-2 pt-2 border-t border-gray-200">
+                    <input type="text" id={`new-key-${node.id}`} placeholder="Ej: x-api-key" className="w-1/3 border border-gray-300 rounded p-1.5 text-xs focus:ring-chatwoot focus:border-chatwoot" />
+                    <input type="text" id={`new-val-${node.id}`} placeholder="Ej: secreto123" className="flex-1 border border-gray-300 rounded p-1.5 text-xs focus:ring-chatwoot focus:border-chatwoot" />
+                    <button type="button" onClick={() => {
+                      const kInput = document.getElementById(`new-key-${node.id}`) as HTMLInputElement;
+                      const vInput = document.getElementById(`new-val-${node.id}`) as HTMLInputElement;
+                      if (kInput && vInput && kInput.value) {
+                        const h = { ...(node.headers || {}), [kInput.value]: vInput.value };
+                        setNodes(prev => prev.map(n => n.id === node.id ? { ...n, headers: h } : n));
+                        kInput.value = '';
+                        vInput.value = '';
+                      }
+                    }} className="bg-chatwoot/10 text-chatwoot border border-chatwoot/20 px-3 rounded text-xs font-bold hover:bg-chatwoot hover:text-white transition-colors">+ Añadir</button>
+                  </div>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
