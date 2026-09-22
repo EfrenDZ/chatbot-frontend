@@ -451,12 +451,12 @@ function App() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border border-green-200 bg-green-50/30 rounded p-3">
+              <div className="flex gap-4 overflow-x-auto pb-4 items-start">
+                <div className="border border-green-200 bg-green-50/30 rounded p-3 min-w-[350px] flex-1 flex-shrink-0">
                   <p className="text-xs font-bold text-green-600 mb-2 uppercase">Si tiene ÉXITO (200 OK):</p>
                   {node.successNodeId && renderNode(node.successNodeId, depth + 1, false)}
                 </div>
-                <div className="border border-red-200 bg-red-50/30 rounded p-3">
+                <div className="border border-red-200 bg-red-50/30 rounded p-3 min-w-[350px] flex-1 flex-shrink-0">
                   <p className="text-xs font-bold text-red-600 mb-2 uppercase">Si FALLA (Error):</p>
                   {node.errorNodeId && renderNode(node.errorNodeId, depth + 1, false)}
                 </div>
