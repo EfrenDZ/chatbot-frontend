@@ -990,12 +990,18 @@ function App() {
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-2">Credenciales Globales (API Keys)</label>
                 <div className="space-y-2">
-                  {Object.entries(typeof formData.apiHeaders === 'object' && formData.apiHeaders ? formData.apiHeaders : {}).map(([k, v]) => (
+                  {Object.entries((() => {
+                    let h = formData.apiHeaders;
+                    if (typeof h === 'string') { try { h = JSON.parse(h); } catch(e) { h = {}; } }
+                    return (typeof h === 'object' && h) ? h : {};
+                  })()).map(([k, v]) => (
                     <div key={k} className="flex gap-2 items-center bg-white p-2 border border-gray-200 rounded">
                       <input type="text" value={k} readOnly className="w-1/3 bg-gray-50 border-none p-1.5 text-xs font-mono text-gray-500 rounded" />
                       <input type="password" value={v as string} readOnly className="flex-1 bg-gray-50 border-none p-1.5 text-xs text-gray-600 rounded" />
                       <button type="button" onClick={() => {
-                        const h = { ...(formData.apiHeaders as any) };
+                        let currentH = formData.apiHeaders;
+                        if (typeof currentH === 'string') { try { currentH = JSON.parse(currentH); } catch(e) { currentH = {}; } }
+                        const h = { ...(typeof currentH === 'object' && currentH ? currentH : {}) };
                         delete h[k];
                         setFormData((prev: any) => ({...prev, apiHeaders: h}));
                       }} className="text-red-400 hover:text-red-600 font-bold px-2">✕</button>
@@ -1008,7 +1014,9 @@ function App() {
                       const kInput = document.getElementById('global-new-key') as HTMLInputElement;
                       const vInput = document.getElementById('global-new-val') as HTMLInputElement;
                       if (kInput && vInput && kInput.value) {
-                        const h = { ...(typeof formData.apiHeaders === 'object' ? formData.apiHeaders : {}), [kInput.value]: vInput.value };
+                        let currentH = formData.apiHeaders;
+                        if (typeof currentH === 'string') { try { currentH = JSON.parse(currentH); } catch(e) { currentH = {}; } }
+                        const h = { ...(typeof currentH === 'object' && currentH ? currentH : {}), [kInput.value]: vInput.value };
                         setFormData((prev: any) => ({...prev, apiHeaders: h}));
                         kInput.value = '';
                         vInput.value = '';
