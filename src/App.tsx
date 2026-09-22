@@ -151,7 +151,7 @@ function App() {
       if ((type === 'INPUT' || type === 'DYNAMIC_MENU') && !n.targetNodeId) {
         const targetId = `node-${Date.now()}`;
         n.targetNodeId = targetId;
-        newNodes.push({ id: targetId, type: 'MESSAGE', text: 'Respuesta...', messages: ['Respuesta...'] });
+        newNodes.push({ id: targetId, type: 'MESSAGE' as NodeType, text: 'Respuesta...', messages: ['Respuesta...'] });
       }
       if (type === 'WEBHOOK') {
         if (!n.successNodeId) {
@@ -331,7 +331,21 @@ function App() {
                 </div>
               </div>
               <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Siguiente Paso:</p>
-              {node.targetNodeId && renderNode(node.targetNodeId, depth + 1, false)}
+              {node.targetNodeId ? renderNode(node.targetNodeId, depth + 1, false) : (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newId = `node-${Date.now()}`;
+                      setNodes(prev => {
+                        const newNodes = [...prev, { id: newId, type: 'MESSAGE' as NodeType, text: 'Siguiente paso...', messages: ['Siguiente paso...'] }];
+                        return newNodes.map(n => n.id === node.id ? { ...n, targetNodeId: newId } : n);
+                      });
+                    }}
+                    className="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-bold py-2 px-4 rounded border border-purple-200 transition-colors"
+                  >
+                    + Añadir Siguiente Paso
+                  </button>
+                )}
             </div>
           )}
 
