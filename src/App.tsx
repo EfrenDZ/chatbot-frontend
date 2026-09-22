@@ -4,7 +4,7 @@ import './index.css';
 import { ApiService } from './services/api';
 import { Login } from './components/Login';
 
-type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF' | 'RESTART' | 'RESOLVE' | 'INPUT' | 'WEBHOOK';
+type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF' | 'RESTART' | 'RESOLVE' | 'INPUT' | 'WEBHOOK' | 'DYNAMIC_MENU';
 
 interface FlowOption {
   id: string;
@@ -332,6 +332,50 @@ function App() {
               </div>
               <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Siguiente Paso:</p>
               {node.targetNodeId && renderNode(node.targetNodeId, depth + 1, false)}
+            </div>
+          )}
+
+          {node.type === 'DYNAMIC_MENU' && (
+            <div className="mt-4 border-t border-purple-100 pt-4 bg-purple-50/30 -mx-4 px-4 pb-4 rounded-b-xl">
+              <h4 className="text-xs font-bold text-purple-700 uppercase mb-3 flex items-center gap-2">
+                Configuración del Selector Dinámico
+              </h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 uppercase">1. Variable del Arreglo (JSON)</label>
+                  <input type="text" value={node.arrayVariable || ''} onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, arrayVariable: e.target.value } : n))} placeholder="Ej: catalogo" className="w-full border border-purple-200 rounded p-2 text-sm focus:ring-purple-500 font-mono" />
+                </div>
+                
+                <div>
+                  <label className="text-xs font-bold text-gray-700 uppercase">2. Plantilla del Botón</label>
+                  <input type="text" value={node.titleTemplate || ''} onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, titleTemplate: e.target.value } : n))} placeholder="Ej: {{nombre}} - ${{precio}}" className="w-full border border-purple-200 rounded p-2 text-sm focus:ring-purple-500" />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase">3. Llave a Guardar</label>
+                    <input type="text" value={node.valueKey || ''} onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, valueKey: e.target.value } : n))} placeholder="Ej: id" className="w-full border border-purple-200 rounded p-2 text-sm mt-1 focus:ring-purple-500 font-mono" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase">4. Guardar en Variable</label>
+                    <input type="text" value={node.variableName || ''} onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, variableName: e.target.value } : n))} placeholder="Ej: producto_id" className="w-full border border-purple-200 rounded p-2 text-sm mt-1 focus:ring-purple-500 font-mono" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <p className="text-xs font-semibold text-purple-600 mb-2 uppercase tracking-wide">Siguiente Paso (Después de elegir):</p>
+                <select
+                  value={node.targetNodeId || ''}
+                  onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, targetNodeId: e.target.value } : n))}
+                  className="w-full border border-purple-200 rounded p-2 text-sm font-medium"
+                >
+                  <option value="">-- Finalizar conversación --</option>
+                  {nodes.filter((n: any) => n.id !== node.id).map((n: any) => (
+                    <option key={n.id} value={n.id}>Ir a: {n.type} ({n.id.substring(0, 4)})</option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 
