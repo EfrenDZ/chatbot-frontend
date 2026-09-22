@@ -242,7 +242,7 @@ function App() {
     if (!node) return null;
 
     return (
-      <div key={node.id} className={`relative ${isRoot ? '' : 'pl-6 border-l-2 border-gray-200 ml-4 mt-4'}`}>
+      <div key={node.id} className={`relative min-w-[400px] ${isRoot ? '' : 'pl-6 border-l-2 border-gray-200 ml-4 mt-4'}`}>
         {!isRoot && <div className="absolute -left-[2px] top-6 w-6 h-0.5 bg-gray-200"></div>}
         
         <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs hover:shadow-md transition-shadow">
@@ -367,11 +367,11 @@ function App() {
 
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-gray-700 uppercase">3. Llave a Guardar</label>
+                    <label className="text-xs font-bold text-gray-700 uppercase whitespace-nowrap">3. Llave a Guardar</label>
                     <input type="text" value={node.valueKey || ''} onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, valueKey: e.target.value } : n))} placeholder="Ej: id" className="w-full border border-purple-200 rounded p-2 text-sm mt-1 focus:ring-purple-500 font-mono" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-gray-700 uppercase">4. Guardar en Variable</label>
+                    <label className="text-xs font-bold text-gray-700 uppercase whitespace-nowrap">4. Guardar en Variable</label>
                     <input type="text" value={node.variableName || ''} onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, variableName: e.target.value } : n))} placeholder="Ej: producto_id" className="w-full border border-purple-200 rounded p-2 text-sm mt-1 focus:ring-purple-500 font-mono" />
                   </div>
                 </div>
