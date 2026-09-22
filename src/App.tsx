@@ -148,7 +148,7 @@ function App() {
       const n = { ...newNodes[idx], type };
       
       if (type === 'MENU' && !n.options) n.options = [];
-      if (type === 'INPUT' && !n.targetNodeId) {
+      if ((type === 'INPUT' || type === 'DYNAMIC_MENU') && !n.targetNodeId) {
         const targetId = `node-${Date.now()}`;
         n.targetNodeId = targetId;
         newNodes.push({ id: targetId, type: 'MESSAGE', text: 'Respuesta...', messages: ['Respuesta...'] });
@@ -365,16 +365,7 @@ function App() {
               
               <div className="mt-6">
                 <p className="text-xs font-semibold text-purple-600 mb-2 uppercase tracking-wide">Siguiente Paso (Después de elegir):</p>
-                <select
-                  value={node.targetNodeId || ''}
-                  onChange={(e) => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, targetNodeId: e.target.value } : n))}
-                  className="w-full border border-purple-200 rounded p-2 text-sm font-medium"
-                >
-                  <option value="">-- Finalizar conversación --</option>
-                  {nodes.filter((n: any) => n.id !== node.id).map((n: any) => (
-                    <option key={n.id} value={n.id}>Ir a: {n.type} ({n.id.substring(0, 4)})</option>
-                  ))}
-                </select>
+                {node.targetNodeId && renderNode(node.targetNodeId, depth + 1, false)}
               </div>
             </div>
           )}
