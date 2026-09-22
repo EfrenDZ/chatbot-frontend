@@ -25,6 +25,9 @@ interface FlowNode {
   headers?: any;
   successNodeId?: string;
   errorNodeId?: string;
+  arrayVariable?: string;
+  titleTemplate?: string;
+  valueKey?: string;
 }
 
 function App() {
@@ -254,6 +257,7 @@ function App() {
             >
               <option value="MESSAGE">Mensaje de Texto (Fin)</option>
               <option value="MENU">Sub-Menú de Opciones</option>
+              <option value="DYNAMIC_MENU">Selector Dinámico (Desde API)</option>
               <option value="INPUT">Solicitar Dato (Input)</option>
               <option value="WEBHOOK">Llamada a API (Webhook)</option>
               {botMode === 'HYBRID' && <option value="AI">Delegar a Inteligencia Artificial</option>}
