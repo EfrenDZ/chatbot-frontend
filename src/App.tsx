@@ -351,7 +351,7 @@ function App() {
                 </div>
               </div>
               <div className="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
-                <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Credenciales o Headers (Opcional):</label>
+                <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Credenciales Extra (Opcional): <span className="text-chatwoot normal-case font-normal">*Hereda globales*</span></label>
                 <div className="space-y-2">
                   {Object.entries(node.headers || {}).map(([k, v]) => (
                     <div key={k} className="flex gap-2">
@@ -967,6 +967,48 @@ function App() {
 
           {/* SECCIÓN 4: Mensajes Generales del Sistema */}
           {activeTab === 'SYSTEM' && ( <div className="space-y-8">
+
+          <section className="space-y-4">
+            <div className="border-b pb-2">
+              <h2 className="text-base font-bold text-gray-900 text-chatwoot">
+                Configuración Global API
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">Configura tu URL base y credenciales una sola vez. Tus nodos de Webhook heredarán estos valores automáticamente (Patrón DRY).</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">URL Base Global</label>
+                <input 
+                  type="text" 
+                  name="apiBaseUrl" 
+                  value={formData.apiBaseUrl || ''} 
+                  onChange={handleChange}
+                  placeholder="Ej: https://api.aguacero.com"
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Headers / Credenciales Globales (JSON)</label>
+                <textarea 
+                  name="apiHeaders" 
+                  value={typeof formData.apiHeaders === 'object' ? JSON.stringify(formData.apiHeaders) : (formData.apiHeaders || '')} 
+                  onChange={(e) => {
+                     const inputValue = e.target.value;
+                     try {
+                        const val = inputValue ? JSON.parse(inputValue) : undefined;
+                        setFormData((prev: any) => ({...prev, apiHeaders: val}));
+                     } catch(err) {
+                        setFormData((prev: any) => ({...prev, apiHeaders: inputValue}));
+                     }
+                  }}
+                  placeholder='{"x-api-key": "secreto"}'
+                  rows={2}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot font-mono"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Escribe en formato JSON válido. Se inyectará en todas tus llamadas a Webhooks o IA.</p>
+              </div>
+            </div>
+          </section>
           <section className="space-y-4">
             <div className="border-b pb-2">
               <h2 className="text-base font-bold text-gray-900 text-chatwoot">
