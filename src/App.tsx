@@ -4,7 +4,7 @@ import './index.css';
 import { ApiService } from './services/api';
 import { Login } from './components/Login';
 
-type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF' | 'RESTART' | 'RESOLVE';
+type NodeType = 'MENU' | 'MESSAGE' | 'AI' | 'HANDOFF' | 'RESTART' | 'RESOLVE' | 'INPUT' | 'WEBHOOK';
 
 interface FlowOption {
   id: string;
@@ -18,6 +18,13 @@ interface FlowNode {
   text: string;
   messages?: string[];
   options?: FlowOption[];
+  targetNodeId?: string;
+  variableName?: string;
+  url?: string;
+  method?: string;
+  headers?: any;
+  successNodeId?: string;
+  errorNodeId?: string;
 }
 
 function App() {
@@ -130,11 +137,34 @@ function App() {
   };
 
   const updateNodeType = (nodeId: string, type: NodeType) => {
-    setNodes(prev => prev.map(n => {
-      if (n.id !== nodeId) return n;
-      if (type === 'MENU' && !n.options) return { ...n, type, options: [] };
-      return { ...n, type };
-    }));
+    setNodes(prev => {
+      const newNodes = [...prev];
+      const idx = newNodes.findIndex(n => n.id === nodeId);
+      if (idx === -1) return prev;
+      
+      const n = { ...newNodes[idx], type };
+      
+      if (type === 'MENU' && !n.options) n.options = [];
+      if (type === 'INPUT' && !n.targetNodeId) {
+        const targetId = `node-${Date.now()}`;
+        n.targetNodeId = targetId;
+        newNodes.push({ id: targetId, type: 'MESSAGE', text: 'Respuesta...', messages: ['Respuesta...'] });
+      }
+      if (type === 'WEBHOOK') {
+        if (!n.successNodeId) {
+          const sId = `node-s-${Date.now()}`;
+          n.successNodeId = sId;
+          newNodes.push({ id: sId, type: 'MESSAGE', text: 'Éxito...', messages: ['Éxito...'] });
+        }
+        if (!n.errorNodeId) {
+          const eId = `node-e-${Date.now()}`;
+          n.errorNodeId = eId;
+          newNodes.push({ id: eId, type: 'MESSAGE', text: 'Error...', messages: ['Error...'] });
+        }
+      }
+      newNodes[idx] = n;
+      return newNodes;
+    });
   };
 
   const updateOptionLabel = (nodeId: string, optionId: string, label: string) => {
@@ -224,6 +254,8 @@ function App() {
             >
               <option value="MESSAGE">Mensaje de Texto (Fin)</option>
               <option value="MENU">Sub-Menú de Opciones</option>
+              <option value="INPUT">Solicitar Dato (Input)</option>
+              <option value="WEBHOOK">Llamada a API (Webhook)</option>
               {botMode === 'HYBRID' && <option value="AI">Delegar a Inteligencia Artificial</option>}
               <option value="HANDOFF">Transferir a un Asesor Humano</option>
             </select>
@@ -281,6 +313,64 @@ function App() {
             <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded border border-amber-200 mt-2">
               Al llegar a este bloque, el bot enviará el mensaje anterior, pausará automáticamente la atención robótica y abrirá la conversación en Chatwoot para tus agentes.
             </p>
+          )}
+
+          
+          {node.type === 'INPUT' && (
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Guardar respuesta como (Variable):</label>
+                  <input type="text" value={node.variableName || ''} onChange={(e) => {
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, variableName: e.target.value } : n));
+                  }} placeholder="ej. cantidad_garrafones" className="w-full border rounded p-2 text-sm mt-1" />
+                </div>
+              </div>
+              <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Siguiente Paso:</p>
+              {node.targetNodeId && renderNode(node.targetNodeId, depth + 1, false)}
+            </div>
+          )}
+
+          {node.type === 'WEBHOOK' && (
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">URL del API:</label>
+                  <input type="text" value={node.url || ''} onChange={(e) => {
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, url: e.target.value } : n));
+                  }} placeholder="https://api.tudominio.com/..." className="w-full border rounded p-2 text-sm mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Método:</label>
+                  <select value={node.method || 'POST'} onChange={(e) => {
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, method: e.target.value } : n));
+                  }} className="w-full border rounded p-2 text-sm mt-1">
+                    <option value="POST">POST</option>
+                    <option value="GET">GET</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-gray-500 uppercase">Headers JSON (Auth):</label>
+                <textarea value={node.headers ? JSON.stringify(node.headers) : ''} onChange={(e) => {
+                  try {
+                    const h = e.target.value ? JSON.parse(e.target.value) : undefined;
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, headers: h } : n));
+                  } catch(e) {} // ignore invalid json while typing
+                }} placeholder='{"x-api-key": "secret"}' rows={2} className="w-full border rounded p-2 text-sm mt-1 font-mono" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="border border-green-200 bg-green-50/30 rounded p-3">
+                  <p className="text-xs font-bold text-green-600 mb-2 uppercase">Si tiene ÉXITO (200 OK):</p>
+                  {node.successNodeId && renderNode(node.successNodeId, depth + 1, false)}
+                </div>
+                <div className="border border-red-200 bg-red-50/30 rounded p-3">
+                  <p className="text-xs font-bold text-red-600 mb-2 uppercase">Si FALLA (Error):</p>
+                  {node.errorNodeId && renderNode(node.errorNodeId, depth + 1, false)}
+                </div>
+              </div>
+            </div>
           )}
 
           {node.type === 'MENU' && (
