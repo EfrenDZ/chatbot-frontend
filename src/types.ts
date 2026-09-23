@@ -19,6 +19,7 @@ export interface FlowNode {
   headers?: any;
   successNodeId?: string;
   errorNodeId?: string;
+  payloadTemplate?: string;
   arrayVariable?: string;
   titleTemplate?: string;
   valueKey?: string;

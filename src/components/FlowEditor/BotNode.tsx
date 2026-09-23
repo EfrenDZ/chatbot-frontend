@@ -176,6 +176,18 @@ export const BotNode = memo(({ data, isConnectable }: any) => {
         <div className="mt-3 border-t pt-3">
           <label className="text-xs font-bold text-gray-500">URL DEL API:</label>
           <input value={node.url || ''} onChange={e => setNodes((prev: any) => prev.map((n: any) => n.id === node.id ? {...n, url: e.target.value} : n))} className="w-full border rounded p-1 mt-1 mb-2 text-sm nodrag" />
+          
+          <label className="text-xs font-bold text-gray-500">PLANTILLA JSON (Opcional):</label>
+          <textarea 
+            rows={5} 
+            value={node.payloadTemplate || ''} 
+            onChange={e => setNodes((prev: any) => prev.map((n: any) => n.id === node.id ? {...n, payloadTemplate: e.target.value} : n))} 
+            className="w-full border rounded p-1 mt-1 mb-2 text-xs font-mono nodrag" 
+            placeholder='{
+  "telefono": "{{telefono}}"
+}' 
+          />
+
           <div className="flex justify-between mt-4 text-xs font-bold">
             <span className="text-green-600">✓ ÉXITO (TRUE)</span>
             <span className="text-red-600">✗ FALLA (FALSE)</span>
