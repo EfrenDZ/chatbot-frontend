@@ -82,6 +82,15 @@ export const BotNode = memo(({ data, isConnectable }: any) => {
         <span className={`text-xs font-bold uppercase ${isRoot ? 'text-chatwoot' : 'text-gray-500'}`}>
           {isRoot ? 'Inicio' : 'Bloque'}
         </span>
+        {!isRoot && (
+          <button 
+            onClick={() => setNodes((prev: any) => prev.filter((n: any) => n.id !== node.id))}
+            className="text-red-400 hover:text-red-600 ml-2 text-xs"
+            title="Eliminar bloque"
+          >
+            🗑️
+          </button>
+        )}
         <select
           value={node.type}
           onChange={(e) => updateNodeType(e.target.value as NodeType)}
