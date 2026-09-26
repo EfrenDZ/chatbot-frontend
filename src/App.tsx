@@ -749,6 +749,22 @@ function App() {
                   className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Tiempo de Inactividad (Horas antes de cerrar)
+                </label>
+                <input 
+                  type="number" 
+                  name="sessionTimeoutHours" 
+                  value={formData.sessionTimeoutHours || 24} 
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
+                  min="1"
+                  max="72"
+                />
+              </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
