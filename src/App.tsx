@@ -752,16 +752,16 @@ function App() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Tiempo de Inactividad (Horas antes de cerrar)
+                  Tiempo de Inactividad (Minutos antes de cerrar)
                 </label>
                 <input 
                   type="number" 
-                  name="sessionTimeoutHours" 
-                  value={formData.sessionTimeoutHours || 24} 
+                  name="sessionTimeoutMinutes" 
+                  value={formData.sessionTimeoutMinutes || 24} 
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-chatwoot focus:border-chatwoot"
                   min="1"
-                  max="72"
+                  max="4320"
                 />
               </div>
 
